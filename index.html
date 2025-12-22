@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>En Kısa Yol Bulma - Dijkstra</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+    <h1>Smart Route Navigator</h1> <p>İzmir Rota Analizi - Dijkstra Algoritması</p>
+</div>
+
+        <div class="main-content">
+            <div class="sidebar">
+                <div class="panel">
+                    <h3>Nokta Seçimi</h3>
+                    
+                    <div class="input-group">
+                        <label>Başlangıç:</label>
+                        <select id="startNode">
+                            <option value="">Seçiniz</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group">
+                        <label>Varış:</label>
+                        <select id="endNode">
+                            <option value="">Seçiniz</option>
+                        </select>
+                    </div>
+
+                    <button class="btn-find" onclick="hesaplaYol()">Yolu Hesapla</button>
+                    <button class="btn-clear" onclick="temizle()">Temizle</button>
+                </div>
+
+                <div class="panel">
+                    <h3>Sonuçlar</h3>
+                    <div id="sonuclar" class="results">
+                        <p>Henüz hesaplama yapılmadı.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="map"></div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+    <script src="dijkstra.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

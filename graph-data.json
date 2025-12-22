@@ -1,0 +1,78 @@
+{
+  "noktalar": [
+    "Konak",
+    "Alsancak",
+    "Karşıyaka",
+    "Bornova",
+    "Çiğli",
+    "Buca",
+    "Balçova",
+    "Gaziemir",
+    "Kadifekale",
+    "Ege Üniversitesi"
+  ],
+  "koordinatlar": {
+    "Konak": [38.4189, 27.1287],
+    "Alsancak": [38.4383, 27.1458],
+    "Karşıyaka": [38.4599, 27.1109],
+    "Bornova": [38.4697, 27.2142],
+    "Çiğli": [38.5099, 27.0493],
+    "Buca": [38.3886, 27.1776],
+    "Balçova": [38.3928, 27.0533],
+    "Gaziemir": [38.3253, 27.1295],
+    "Kadifekale": [38.4089, 27.1445],
+    "Ege Üniversitesi": [38.4586, 27.2157]
+  },
+  "yollar": {
+    "Konak": [
+      {"node": "Alsancak", "weight": 2.5},
+      {"node": "Kadifekale", "weight": 1.8},
+      {"node": "Karşıyaka", "weight": 4.2},
+      {"node": "Balçova", "weight": 5.5}
+    ],
+    "Alsancak": [
+      {"node": "Konak", "weight": 2.5},
+      {"node": "Karşıyaka", "weight": 3.8},
+      {"node": "Bornova", "weight": 8.5}
+    ],
+    "Karşıyaka": [
+      {"node": "Alsancak", "weight": 3.8},
+      {"node": "Konak", "weight": 4.2},
+      {"node": "Çiğli", "weight": 7.2},
+      {"node": "Bornova", "weight": 9.5}
+    ],
+    "Bornova": [
+      {"node": "Alsancak", "weight": 8.5},
+      {"node": "Karşıyaka", "weight": 9.5},
+      {"node": "Ege Üniversitesi", "weight": 1.2},
+      {"node": "Buca", "weight": 6.8}
+    ],
+    "Çiğli": [
+      {"node": "Karşıyaka", "weight": 7.2},
+      {"node": "Bornova", "weight": 12.5}
+    ],
+    "Buca": [
+      {"node": "Bornova", "weight": 6.8},
+      {"node": "Ege Üniversitesi", "weight": 5.5},
+      {"node": "Kadifekale", "weight": 4.2},
+      {"node": "Gaziemir", "weight": 5.0}
+    ],
+    "Balçova": [
+      {"node": "Konak", "weight": 5.5},
+      {"node": "Gaziemir", "weight": 6.8}
+    ],
+    "Gaziemir": [
+      {"node": "Balçova", "weight": 6.8},
+      {"node": "Buca", "weight": 5.0},
+      {"node": "Konak", "weight": 7.2}
+    ],
+    "Kadifekale": [
+      {"node": "Konak", "weight": 1.8},
+      {"node": "Buca", "weight": 4.2}
+    ],
+    "Ege Üniversitesi": [
+      {"node": "Bornova", "weight": 1.2},
+      {"node": "Buca", "weight": 5.5}
+    ]
+  }
+}
