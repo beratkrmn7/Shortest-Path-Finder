@@ -3,53 +3,103 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>En Kısa Yol Bulma - Dijkstra</title>
+    <title>Smart Route Navigator Pro</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container">
         <div class="header">
-    <h1>Smart Route Navigator</h1> <p>İzmir Rota Analizi - Dijkstra Algoritması</p>
-</div>
+            <div class="header-left">
+                <h1>🗺️ Smart Route Navigator Pro</h1>
+                <p>Advanced Pathfinding with Multiple Algorithms</p>
+            </div>
+            <div class="algorithm-badge">
+                <div class="algorithm-indicator"></div>
+                <span id="currentAlgo">Dijkstra Active</span>
+            </div>
+        </div>
 
         <div class="main-content">
             <div class="sidebar">
-                <div class="panel">
-                    <h3>Nokta Seçimi</h3>
-                    
-                    <div class="input-group">
-                        <label>Başlangıç:</label>
-                        <select id="startNode">
-                            <option value="">Seçiniz</option>
-                        </select>
+                <div class="mode-selector">
+                    <div class="mode-title">Navigation Mode</div>
+                    <div class="mode-options">
+                        <button class="mode-btn active" id="freeMode" onclick="setMode('free')">
+                            🌍 Free Mode<br><small>Click Anywhere</small>
+                        </button>
+                        <button class="mode-btn" id="graphMode" onclick="setMode('graph')">
+                            📍 Graph Mode<br><small>Predefined Points</small>
+                        </button>
                     </div>
+                </div>
 
-                    <div class="input-group">
-                        <label>Varış:</label>
-                        <select id="endNode">
-                            <option value="">Seçiniz</option>
-                        </select>
-                    </div>
-
-                    <button class="btn-find" onclick="hesaplaYol()">Yolu Hesapla</button>
-                    <button class="btn-clear" onclick="temizle()">Temizle</button>
+                <div class="algorithm-selector">
+                    <div class="mode-title">Select Algorithm</div>
+                    <button class="algo-btn active" id="algoDijkstra" onclick="setAlgorithm('dijkstra')">
+                        <span>🔵 Dijkstra's Algorithm</span>
+                        <span class="algo-badge">Classic</span>
+                    </button>
+                    <button class="algo-btn" id="algoAstar" onclick="setAlgorithm('astar')">
+                        <span>⭐ A* Algorithm</span>
+                        <span class="algo-badge">Heuristic</span>
+                    </button>
+                    <button class="algo-btn" id="algoBfs" onclick="setAlgorithm('bfs')">
+                        <span>🔄 BFS Algorithm</span>
+                        <span class="algo-badge">Unweighted</span>
+                    </button>
                 </div>
 
                 <div class="panel">
-                    <h3>Sonuçlar</h3>
-                    <div id="sonuclar" class="results">
-                        <p>Henüz hesaplama yapılmadı.</p>
+                    <h3>📊 Route Information</h3>
+                    <div id="results">
+                        <p style="color: #64748b; text-align: center; padding: 20px; font-size: 13px;">
+                            No route calculated yet.<br>Select two points to begin.
+                        </p>
                     </div>
                 </div>
+
+                <div class="btn-group">
+                    <button class="btn btn-primary" onclick="compareAlgorithms()">Compare All</button>
+                    <button class="btn btn-secondary" onclick="clearMap()">Clear Map</button>
+                </div>
+
+                <div class="panel" style="margin-top: 20px;">
+                    <h3>📋 Instructions</h3>
+                    <div id="instructions">
+                        <div class="instruction-step">
+                            <div class="step-icon">1</div>
+                            <div class="step-text">
+                                <strong>Select Start Point</strong>
+                                <p>Click anywhere on the map to set your starting location</p>
+                            </div>
+                        </div>
+                        <div class="instruction-step">
+                            <div class="step-icon">2</div>
+                            <div class="step-text">
+                                <strong>Select Destination</strong>
+                                <p>Click another location to set your destination</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="comparisonPanel" style="display: none;"></div>
             </div>
 
-            <div id="map"></div>
+            <div id="map">
+                <div class="loading-overlay" id="loadingOverlay">
+                    <div class="spinner"></div>
+                    <span>Calculating route...</span>
+                </div>
+            </div>
         </div>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
-    <script src="dijkstra.js"></script>
+    <script src="graph-data.js"></script>
+    <script src="algorithm.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
