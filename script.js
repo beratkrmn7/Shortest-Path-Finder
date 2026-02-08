@@ -1,244 +1,164 @@
-// ================================
-// GLOBAL DEĞİŞKENLER
-// ================================
-var izmir_harita = null;
-var harita;
-var yolCizgisi = null;
-var baslangicIsareti = null;
-var varisIsareti = null;
+// script.js - İşaretçileri (Marker) kaldıran güncel sürüm
 
-// ================================
-// SAYFA YÜKLENİNCE JSON OKU
-// ================================
-window.onload = function () {
-    fetch("graph-data.json")
-        .then(response => {
-            if (!response.ok) {
-                throw new Error("JSON dosyası yüklenemedi");
-            }
-            return response.json();
-        })
-        .then(data => {
-            izmir_harita = data;
-            haritayiBaslat();
-        })
-        .catch(error => {
-            alert("Veri yüklenirken hata oluştu!");
-            console.error(error);
-        });
+// Global Variables
+let map;
+let selectedPoints = [];
+let routeLayer = null;
+let graphLayer = L.layerGroup();
+let currentMode = 'free';
+let currentAlgorithm = 'dijkstra';
+
+// İkon tanımlamalarını siliyoruz çünkü artık marker kullanmayacağız
+
+window.onload = function() {
+    map = L.map('map').setView([38.4237, 27.1428], 11);
+
+    // Canlı Voyager katmanı
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+        attribution: '© OpenStreetMap contributors & CARTO',
+        maxZoom: 19
+    }).addTo(map);
+
+    graphLayer.addTo(map);
+
+    map.on('click', function(e) {
+        if (currentMode === 'free' && selectedPoints.length < 2) {
+            addPoint(e.latlng, null);
+        }
+    });
+
+    setMode('free');
 };
 
-// ================================
-// HARİTA BAŞLAT
-// ================================
-function haritayiBaslat() {
-    harita = L.map('map').setView([38.4237, 27.1428], 11);
+function setMode(mode) {
+    currentMode = mode;
+    clearMap();
+    document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
+    document.getElementById(mode + 'Mode').classList.add('active');
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap contributors'
-    }).addTo(harita);
-
-    yollariCiz();
-    noktalariEkle();
-    dropdownDoldur();
-}
-
-// ================================
-// YOLLARI ÇİZ
-// ================================
-function yollariCiz() {
-    for (var nokta in izmir_harita.yollar) {
-        var baglananlar = izmir_harita.yollar[nokta];
-
-        for (var i = 0; i < baglananlar.length; i++) {
-            var hedef = baglananlar[i].node;
-
-            L.polyline([
-                izmir_harita.koordinatlar[nokta],
-                izmir_harita.koordinatlar[hedef]
-            ], {
-                color: '#3498db',
-                weight: 2,
-                opacity: 0.4
-            }).addTo(harita);
-        }
+    const instructions = document.getElementById('instructions');
+    if (mode === 'graph') {
+        showGraphNodes();
+        instructions.innerHTML = `<p style="font-size:13px; color:#64748b;">Graph Mode: Select predefined markers on the map.</p>`;
+    } else {
+        graphLayer.clearLayers();
+        instructions.innerHTML = `<p style="font-size:13px; color:#64748b;">Free Mode: Click anywhere on the map to set points.</p>`;
     }
 }
 
-// ================================
-// NOKTALARI EKLE
-// ================================
-function noktalariEkle() {
-    for (var i = 0; i < izmir_harita.noktalar.length; i++) {
-        var nokta = izmir_harita.noktalar[i];
-        var koord = izmir_harita.koordinatlar[nokta];
+function setAlgorithm(algo) {
+    currentAlgorithm = algo;
+    document.querySelectorAll('.algo-btn').forEach(btn => btn.classList.remove('active'));
+    document.getElementById('algo' + algo.charAt(0).toUpperCase() + algo.slice(1)).classList.add('active');
+    if (currentMode === 'graph' && selectedPoints.length === 2) calculatePath();
+}
 
-        var marker = L.circleMarker(koord, {
-            radius: 8,
-            fillColor: 'red',
-            color: 'white',
-            weight: 2,
-            fillOpacity: 1
-        }).addTo(harita);
+function showGraphNodes() {
+    graphLayer.clearLayers();
+    for (let name in graphData.nodes) {
+        const coord = graphData.nodes[name];
+        const marker = L.circleMarker(coord, {
+            radius: 6, // Biraz daha küçülttük
+            color: '#fff',
+            fillColor: '#667eea',
+            fillOpacity: 0.9,
+            weight: 2
+        }).bindTooltip(name, { permanent: true, direction: 'top', className: 'my-tooltip', offset: [0, -10] });
 
-        (function (secilenNokta) {
-            marker.on('click', function () {
-                noktaSec(secilenNokta);
-            });
-            marker.bindTooltip(secilenNokta, { permanent: false, direction: "top" });
-        })(nokta);
+        marker.on('click', function() {
+            if (currentMode === 'graph' && (selectedPoints.length === 0 || selectedPoints[0].name !== name)) {
+                if (selectedPoints.length < 2) addPoint(L.latLng(coord), name);
+            }
+        });
+        graphLayer.addLayer(marker);
     }
 }
 
-// ================================
-// MARKER TIKLAMA MANTIĞI
-// ================================
-function noktaSec(isim) {
-    var baslangicSelect = document.getElementById('startNode');
-    var varisSelect = document.getElementById('endNode');
+// GÜNCELLENEN FONKSİYON: Marker eklemeyi durdurduk
+function addPoint(latlng, name) {
+    // Görseldeki yeşil/kırmızı ikonları (L.marker) artık eklemiyoruz.
+    // Sadece koordinatları listeye alıyoruz.
+    selectedPoints.push({ latlng, name });
 
-    if (baslangicSelect.value === "") {
-        baslangicSelect.value = isim;
-    } 
-    else if (varisSelect.value === "" && baslangicSelect.value !== isim) {
-        varisSelect.value = isim;
-        hesaplaYol();
-    } 
-    else {
-        baslangicSelect.value = isim;
-        varisSelect.value = "";
-        eskiCizgileriTemizle();
-        document.getElementById('sonuclar').innerHTML =
-            "<p>Yeni başlangıç seçildi...</p>";
-    }
+    // Geçici olarak tıkladığın yeri belli etmek istersen ufak bir daire bırakabiliriz:
+    L.circleMarker(latlng, { radius: 4, color: '#ff4757' }).addTo(map);
+
+    if (selectedPoints.length === 2) calculatePath();
 }
 
-// ================================
-// DROPDOWN DOLDUR
-// ================================
-function dropdownDoldur() {
-    var baslangicSelect = document.getElementById('startNode');
-    var varisSelect = document.getElementById('endNode');
-
-    for (var i = 0; i < izmir_harita.noktalar.length; i++) {
-        var nokta = izmir_harita.noktalar[i];
-
-        var option1 = document.createElement('option');
-        option1.value = nokta;
-        option1.text = nokta;
-        baslangicSelect.add(option1);
-
-        var option2 = document.createElement('option');
-        option2.value = nokta;
-        option2.text = nokta;
-        varisSelect.add(option2);
-    }
+function calculatePath() {
+    if (selectedPoints.length < 2) return;
+    document.getElementById('loadingOverlay').classList.add('show');
+    currentMode === 'graph' ? calculateGraphPath() : calculateFreePath();
 }
 
-// ================================
-// YOL HESAPLA
-// ================================
-function hesaplaYol() {
-    var baslangic = document.getElementById('startNode').value;
-    var varis = document.getElementById('endNode').value;
-
-    if (baslangic === "" || varis === "") {
-        alert("Lütfen başlangıç ve varış noktası seçin!");
-        return;
-    }
-
-    if (baslangic === varis) {
-        alert("Başlangıç ve varış aynı olamaz!");
-        return;
-    }
-
-    eskiCizgileriTemizle();
-
-    var sonuc = dijkstra(izmir_harita.yollar, baslangic, varis);
-
-    if (sonuc.mesafe === Infinity) {
-        alert("Bu noktalar arasında yol bulunamadı!");
-        return;
-    }
-
-    yoluGoster(sonuc, baslangic, varis);
+function calculateGraphPath() {
+    const start = selectedPoints[0].name, end = selectedPoints[1].name;
+    try {
+        let result = currentAlgorithm === 'dijkstra' ? dijkstra(start, end) :
+                     (currentAlgorithm === 'astar' ? astar(start, end) : bfs(start, end));
+        document.getElementById('loadingOverlay').classList.remove('show');
+        if (!result) return alert("No path found!");
+        drawGraphRoute(result.path);
+        displayResults(result.distance, result.path.length, currentAlgorithm);
+    } catch (e) { document.getElementById('loadingOverlay').classList.remove('show'); }
 }
 
-// ================================
-// ESKİ ÇİZGİLERİ TEMİZLE
-// ================================
-function eskiCizgileriTemizle() {
-    if (yolCizgisi) harita.removeLayer(yolCizgisi);
-    if (baslangicIsareti) harita.removeLayer(baslangicIsareti);
-    if (varisIsareti) harita.removeLayer(varisIsareti);
+async function calculateFreePath() {
+    const p1 = selectedPoints[0].latlng, p2 = selectedPoints[1].latlng;
+    const url = `https://router.project-osrm.org/route/v1/driving/${p1.lng},${p1.lat};${p2.lng},${p2.lat}?overview=full&geometries=geojson`;
+    try {
+        const res = await fetch(url);
+        const data = await res.json();
+        document.getElementById('loadingOverlay').classList.remove('show');
+        if (data.code !== 'Ok') return alert("No route found");
+        const route = data.routes[0];
+        if (routeLayer) map.removeLayer(routeLayer);
+
+        // Rota çizgisi
+        routeLayer = L.geoJSON(route.geometry, {
+            style: { color: '#ff4757', weight: 6, opacity: 0.9 }
+        }).addTo(map);
+
+        map.fitBounds(routeLayer.getBounds(), { padding: [50, 50] });
+        updateResultsHTML((route.distance / 1000).toFixed(2) + " km", Math.round(route.duration / 60) + " min", "Real road data");
+    } catch (e) { document.getElementById('loadingOverlay').classList.remove('show'); }
 }
 
-// ================================
-// YOLU HARİTADA GÖSTER
-// ================================
-function yoluGoster(sonuc, baslangic, varis) {
-    var yolKoordinatlari = [];
-
-    for (var i = 0; i < sonuc.yol.length; i++) {
-        yolKoordinatlari.push(
-            izmir_harita.koordinatlar[sonuc.yol[i]]
-        );
-    }
-
-    yolCizgisi = L.polyline(yolKoordinatlari, {
-        color: '#ff1900',
-        weight: 5,
-        opacity: 0.8
-    }).addTo(harita);
-
-    baslangicIsareti = L.circleMarker(
-        izmir_harita.koordinatlar[baslangic], {
-        radius: 10,
-        fillColor: '#2ecc71',
-        color: 'white',
-        weight: 2,
-        fillOpacity: 1
-    }).addTo(harita)
-      .bindPopup("Başlangıç: " + baslangic)
-      .openPopup();
-
-    varisIsareti = L.circleMarker(
-        izmir_harita.koordinatlar[varis], {
-        radius: 10,
-        fillColor: '#e74c3c',
-        color: 'white',
-        weight: 2,
-        fillOpacity: 1
-    }).addTo(harita)
-      .bindPopup("Varış: " + varis);
-
-    harita.fitBounds(yolCizgisi.getBounds());
-    sonuclariGoster(sonuc);
+function drawGraphRoute(pathNodes) {
+    if (routeLayer) map.removeLayer(routeLayer);
+    const latlngs = pathNodes.map(name => graphData.nodes[name]);
+    routeLayer = L.polyline(latlngs, { color: '#ff4757', weight: 6, dashArray: '10, 10', opacity: 0.9 }).addTo(map);
+    map.fitBounds(routeLayer.getBounds(), { padding: [50, 50] });
 }
 
-// ================================
-// SONUÇLARI GÖSTER
-// ================================
-function sonuclariGoster(sonuc) {
-    var sonucDiv = document.getElementById('sonuclar');
+function displayResults(dist, steps, algo) {
+    updateResultsHTML(dist.toFixed(2) + " units", Math.round(dist * 1.5) + " min", `Algorithm: ${algo.toUpperCase()}`);
+}
 
-    sonucDiv.innerHTML = `
-        <div style="padding:10px; background:#e8f8f5; border-radius:5px;">
-            <p><strong>Toplam Mesafe:</strong> ${sonuc.mesafe.toFixed(1)} km</p>
-            <p><strong>Geçilen Düğüm Sayısı:</strong> ${sonuc.yol.length}</p>
-            <p><strong>Güzergah:</strong><br>${sonuc.yol.join(" ➝ ")}</p>
+function updateResultsHTML(dist, time, extra) {
+    document.getElementById('results').innerHTML = `
+        <div class="result-grid">
+            <div class="result-item"><div class="result-label">Distance</div><div class="result-value">${dist}</div></div>
+            <div class="result-item"><div class="result-label">Est. Time</div><div class="result-value">${time}</div></div>
         </div>
-    `;
+        <div class="route-path"><strong>Info:</strong> ${extra}</div>`;
 }
 
-// ================================
-// TEMİZLE
-// ================================
-function temizle() {
-    eskiCizgileriTemizle();
-    document.getElementById('startNode').value = "";
-    document.getElementById('endNode').value = "";
-    document.getElementById('sonuclar').innerHTML =
-        "<p>Henüz hesaplama yapılmadı.</p>";
-    harita.setView([38.4237, 27.1428], 11);
+function clearMap() {
+    // Ekrandaki tüm çizimleri ve geçici noktaları temizle
+    map.eachLayer((layer) => {
+        if (layer instanceof L.Polyline || layer instanceof L.CircleMarker) {
+            // Grafik düğümlerini silme (onlar graphLayer içinde)
+            if (!graphLayer.hasLayer(layer)) {
+                map.removeLayer(layer);
+            }
+        }
+    });
+
+    selectedPoints = [];
+    if (routeLayer) map.removeLayer(routeLayer);
+    routeLayer = null;
+    document.getElementById('results').innerHTML = '<p style="text-align:center;padding:20px; font-size:12px; color:#64748b;">Select two points.</p>';
+    if (currentMode === 'graph') showGraphNodes();
 }
